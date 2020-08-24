@@ -22,8 +22,6 @@
 .author_info {
     font-size: 0.7rem;
     line-height: 0.0rem;
-;
-
 }
 
 /* Bootstrap Collapse Tweaks start */
@@ -37,22 +35,17 @@
     padding: 0.5rem
 
 }
-
-
 .posttext p.collapse:not(.show) {
   display: block;
   height: 3rem;
   overflow: hidden;
 }
-
 .posttext p.collapsing {
   height: 3rem;
 }
-
 .posttext a.collapsed::after {
   content: '+ Show More';
 }
-
 .posttext a:not(.collapsed)::after {
   content: '- Show Less';
 }
@@ -75,19 +68,7 @@
     animation-name: showeditor;
 
 }
-/*
-.container-fluid {
-    border:1px;
-    border-color: cornflowerblue;
-    border-style: solid;
-}
 
-.container {
-    border:1px;
-    border-color: cornflowerblue;
-    border-style: solid;
-}
-*/
 .card-footer {
     background-color: transparent;
     height: 1.5rem;
