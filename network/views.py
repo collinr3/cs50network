@@ -11,7 +11,6 @@ from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .models import User, Post, Follower, Feedback
-from .forms import PostForm
 
 #@login_required(login_url='/login')
 def index(request):
@@ -29,7 +28,7 @@ def index(request):
         'intro': view_intro,
         'post_list': post_list,
     }
-    return render(request, "network/index2.html", content)
+    return render(request, "network/index.html", content)
 
 
 def login_view(request):
@@ -132,7 +131,7 @@ def get_posts(request):
         'following': following_count,
         'follow_option': follow_option
     }
-    return render(request, "network/index2.html", content)
+    return render(request, "network/index.html", content)
 
 
 @login_required(login_url='/login')
@@ -164,19 +163,7 @@ def get_following(request):
         'following': following_count
     }
     #print(content)
-    return render(request, "network/index2.html", content)
-
-@login_required(login_url='/login')
-def read(request):
-    #TODO Remove this route - perhaps, unless I implement a More option. Or, I implement a 280 character limit ala Twitter.
-    post_id = request.GET.get('id', '')
-    detail = Post.objects.get(id=post_id)
-    follower_count = _followers(detail.author)
-    content = {
-        'detail': detail,
-        'follower_count': follower_count,
-    }
-    return render(request, "network/detail.html", content)
+    return render(request, "network/index.html", content)
 
 
 @login_required(login_url='/login')
@@ -222,7 +209,7 @@ def like(request):
         'likes': detail.like_count,
     }
     #print(content)
-    #return render(request, "network/index2.html", content)
+    #return render(request, "network/index.html", content)
     return JsonResponse(content)
 
 @login_required(login_url='/login')

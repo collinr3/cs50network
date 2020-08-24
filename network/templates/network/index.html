@@ -2,69 +2,356 @@
 
 {% block body %}
 
-    {% if person is not None %}
-        <h3>Profile for {{ person }}</h3>
-        <p>Following: {{ following }} Followed by: {{ followers }}
-            {% if follow_option is not None %}
-                <form action="{% url 'follow' %}?uname={{ person }}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-primary" style="margin: 10px">{{ follow_option }}</button>
-                </form>
-            {% endif %}
-        <hr>
+{%  block profile %}
+	<!-- Used to display a User Profile for a given person -->
+	{% if person is not None %}
+	    <div class="container">
+		    <h6>Profile for {{ person }}</h6>
+		    <p class="author_info">
+			    Following: {{ following }} Followed by: {{ followers }}
+		    </p>
+	        {% if follow_option is not None %}
+	            <form action="{% url 'follow' %}?uname={{ person }}" method="post">
+	                {% csrf_token %}
+	                <button type="submit" class="btn btn-outline-secondary btn-sm" >
+		                {{ follow_option }}
+	                </button>
+	            </form>
+	        {% endif %}
+	    </div>
+	    <hr>
+	{% endif %}
+{% endblock profile %}
+
+{% block intro %}
+	<!-- When no user logged in, show an introductory snippet -->
+    {% if intro %}
+        {% include './intro.html' %}
     {% endif %}
+{% endblock intro %}
 
-    <h3>Latest Posts...</h3>
- {% for post, opinion in post_list %}
-    <p style="margin: 10px"><a href="{% url 'posts' %}?uid={{ post.author.id }}">{{ post.author }}</a> {{ post.created|date:'D j-M-Y H:i' }}</p>
-    <p>{{ post.text }}</p>
-    {% if post.like_count == 1 %}
-    <p>{{ post.like_count }} Like </p>
-    {% else %}
-        <p>{{ post.like_count }} Likes </p>
-    {% endif %}
+{% block posts %}
+    <!-- Display a page of posts in supplied order and associated 'Like status' from the User perspective.  -->
+    <h6 class="container">Latest Posts...</h6>
+    <hr>
+    {% for post, opinion in post_list %}
+    <div class="container-fluid">
+        <p class="author_info">
+            <a href="{% url 'posts' %}?uid={{ post.author.id }}">
+	            {{ post.author }}
+            </a>
+            {{ post.created|date:'D j-M-Y H:i' }}
+        </p>
 
-    {% if post.author != user %}
+        <!-- Placeholder for React Editor -->
+        <div id="post-{{ post.id }}"></div>
+        <!-- End of Placeholder for React Editor -->
 
-        {% if opinion == 'U' %}
 
-            <a href="{% url 'like' %}?id={{ post.id }}"><span style="color: grey"><i class="fas fa-heart"></i></span></a> <a href="{% url 'read' %}?id={{ post.id }}">View</a> </p>
-        {% else %}
-            <a href="{% url 'like' %}?id={{ post.id }}"><span style="color: crimson"><i class="fas fa-heart"></i></span></a> <a href="{% url 'read' %}?id={{ post.id }}">View</a> </p>
-        {% endif %}
-
-    {% endif %}
-
-    {% if post.author == user %}
-        <!--TODO Need to change this url to be a post.id -->
-        <a href="{% url 'edit' %}?uid={{ post.author.id }}">Edit</a>
-    {% endif %}
-
+        <!-- The post Text will be hidden when the post is being edited, so each post assigned unique ID -->
+        <div id="text-{{ post.id }}">
+            <div class="container posttext" >
+	            <!-- By default a post only shows the first 3 lines of text,
+	                 so a 'Show More' option is added where appropriate
+	            -->
+                <p id="para-{{ post.id }}" class="collapse post" aria-expanded="false">{{ post.text }}</p>
+                <div class="more" id="more-{{post.id}}">
+	                <a role="button" class="collapsed" data-toggle="collapse"
+	                   href="#para-{{ post.id }}" aria-expanded="false" aria-controls="para-{{ post.id }}">
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer author_info">
+                <div class="row">
+                    <div class="col">
+                        <!-- Show appropriate like image  -->
+		                {% if post.author != user %}
+		                    {% if opinion == 'U' %}
+		                        <button class='like-button' id={{ post.id }} data-postid="{{ post.id }}">
+			                        <span id="span-{{ post.id }}" style="color: grey;">
+				                        <i class="fas fa-heart" title="Like/Unlike Post"></i>
+			                        </span>
+		                        </button>
+		                    {% else %}
+		                        <button class='like-button' id={{ post.id }} data-postid="{{ post.id }}">
+			                        <span  id="span-{{ post.id }}" style="color: #dc143c">
+				                        <i class="fas fa-heart" title="Like/Unlike post"></i>
+			                        </span>
+		                        </button>
+		                    {% endif %}
+		                {% else %}
+			                <!-- If the post was written by the user,
+			                     then suppress Like option, but show like a grey like image.
+			                -->
+		                    <button class='like-button' id={{ post.id }} data-postid="{{ post.id }}">
+			                    <span id="span-{{ post.id }}" style="color: grey;">
+				                    <i class="fas fa-heart" title="Cannot like own post!"></i>
+			                    </span>
+		                    </button>
+		                {% endif %}
+                        <!-- After the image, add the like count for the specific post -->
+                        <span class="like-count" id="like-count-{{ post.id}}">
+	                        {{ post.like_count }}
+                        </span>
+                    </div>
+                    <!-- Provide the user with an option to edit their own posts. -->
+	                <div class="col justify-content-end">
+		                {% if post.author == user %}
+		                    <!-- Provide a Button to call the React Edit component -->
+		                    <button class='edit-button' id={{ post.id }} data-postid="{{ post.id }}">
+			                    <span id="span-{{ post.id }}" style="color: grey;">
+				                    <i class="far fa-edit" title="Edit post"></i>
+			                    </span>
+		                    </button>
+		                {% endif %}
+	                </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <hr>
     {% endfor %}
+{%  endblock posts %}
 
+{% block other_pages %}
+	<!-- Provide a Bootstrap paging facility.
+	     Used where there is more than one page of posts (as determined by the server).
+	-->
     {% if post_list.has_other_pages %}
-    <nav aria-label="Page navigation example">
-      <ul class="pagination">
-        {% if post_list.has_previous %}
-          <li class="page-item"><a class="page-link" href="?page={{ post_list.previous_page_number }}&uid={{ person.id }}">Prev</a></li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">Prev</span></li>
-        {% endif %}
-        {% for i in post_list.paginator.page_range %}
-          {% if post_list.number == i %}
-          <li class="page-item active"><a class="page-link" href="?page={{ i }}&uid={{ person.id }}">{{ i }}<span class="sr-only">(current)</span></a></li>
-          {% else %}
-            <li class="page-item"><a class="page-link" href="?page={{ i }}&uid={{ person.id }}">{{ i }}</a></li>
-          {% endif %}
-        {% endfor %}
-        {% if post_list.has_next %}
-          <li class="page-item"><a class="page-link" href="?page={{ post_list.next_page_number }}&uid={{ person.id }}">Next</a></li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">Next</span></li>
-        {% endif %}
-      </ul>
-    </nav>
+	    <nav aria-label="Page navigation example">
+	      <ul class="pagination pagination-sm">
+
+	        {% if post_list.has_previous %}
+	          <li class="page-item">
+		          <a class="page-link" href="?page={{ post_list.previous_page_number }}&uid={{ person.id }}">
+			          Prev
+		          </a>
+	          </li>
+	        {% else %}
+	          <li class="page-item disabled">
+		          <span class="page-link">
+			          Prev
+		          </span>
+	          </li>
+	        {% endif %}
+
+	        {% for i in post_list.paginator.page_range %}
+	          {% if post_list.number == i %}
+	            <li class="page-item active">
+		            <a class="page-link" href="?page={{ i }}&uid={{ person.id }}">
+			            {{ i }}
+			            <span class="sr-only">
+				            (current)
+			            </span>
+		            </a>
+	            </li>
+	          {% else %}
+	            <li class="page-item">
+		            <a class="page-link" href="?page={{ i }}&uid={{ person.id }}">
+			            {{ i }}
+		            </a>
+	            </li>
+	          {% endif %}
+	        {% endfor %}
+
+	        {% if post_list.has_next %}
+	          <li class="page-item">
+		          <a class="page-link" href="?page={{ post_list.next_page_number }}&uid={{ person.id }}">
+			          Next
+		          </a>
+	          </li>
+	        {% else %}
+	          <li class="page-item disabled">
+		          <span class="page-link">
+			          Next
+		          </span>
+	          </li>
+	        {% endif %}
+	      </ul>
+	    </nav>
     {% endif %}
+{% endblock other_pages %}
+
+<script> // Javascript
+
+	// Things to do once document loaded...
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // Add Event Handler for when individual post 'like' icon is clicked.
+        document.querySelectorAll('.like-button').forEach(button => {
+            button.onclick = function () {
+                likePost(this.dataset.postid);
+                };
+
+            });
+
+        // ADD Event Handler for when individual post 'edit' icon is clicked.
+        document.querySelectorAll('.edit-button').forEach(button => {
+            button.onclick = function () {
+                editPost(this.dataset.postid);
+                };
+            });
+
+	    // Adds a 'Show More' option to each post where the post is not fully visible.
+        document.querySelectorAll('.post').forEach(post => {
+            if (post.scrollHeight > post.clientHeight) {
+                let more = "more-" + post.id.substr(5, );
+                document.getElementById(more).style.display = "block";
+                }
+            });
+    });
+
+
+    // Function to handle a clicked 'Like' image.
+	// Updates the Like count and toggles the 'like' icon.
+    function likePost(postid) {
+        const unliked = 'grey' // Grey Heart
+        const liked = '#dc143c' // Red Heart
+        let url = new URL('http://127.0.0.1:8000/like')
+        let params = {id: postid}
+        url.search = new URLSearchParams(params).toString();
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                let likeID = 'like-count-' + postid;
+                let spanID = 'span-' + postid;
+                let likeCount = data.likes;
+                let likeOpinion = data.opinion;
+                let likeText = document.getElementById(postid).innerHTML;
+                if (likeOpinion === 'L') {
+                    document.getElementById(spanID).style.color = liked;
+                } else {
+                    document.getElementById(spanID).style.color = unliked;
+                }
+                document.getElementById(likeID).innerHTML = likeCount;
+
+            })
+    }
+</script>
+
+<script type="text/babel"> // JSX script
+
+    // Provides a Post Editor capability - using React components.
+    class EditForm extends React.Component{
+        constructor(props) {
+            super(props);
+            this.state = {isEditing: false, value: this.props.text};
+
+            // binding for callback
+            this.handleChange = this.handleChange.bind(this);
+            this.editSave = this.editSave.bind(this);
+            this.editCancel = this.editCancel.bind(this);
+        }
+
+        handleChange(event) {
+            this.setState({value: event.target.value});
+        }
+
+        editSave() {
+            this.setState(state => ({
+                isEditing: !state.isEditing
+            }));
+            let url = new URL('http://{{ request.get_host }}{% url 'update' %}')
+            const params = {id: this.props.post, text: this.state.value}
+
+            fetch(url, {
+                credentials: 'include',
+                method: 'POST',
+                mode: 'same-origin',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(params)
+               })
+                  .then(
+                    function(response) {
+                      if (response.status !== 200) {
+                        console.log('Looks like there was a problem. Status Code: ' +
+                          response.status);
+                        return;
+                      }
+
+                    }
+                  )
+                  .catch(function(err) {
+                    console.log('Fetch Error :-S', err);
+                  });
+
+            ReactDOM.unmountComponentAtNode(document.getElementById('post-'+ this.props.post));
+            document.getElementById(this.props.paraID).innerText = this.state.value;
+            document.getElementById('text-' + this.props.post).style.display = "block";
+         }
+
+        editCancel() {
+            this.setState(state => ({
+                isEditing: !state.isEditing
+            }));
+            ReactDOM.unmountComponentAtNode(document.getElementById('post-'+ this.props.post));
+            document.getElementById('text-' + this.props.post).style.display = "block";
+
+         }
+
+        render() {
+            return (
+                <div id="editor">
+                    <div>
+                        <form onSubmit={this.editSave}>
+                            <textarea class="editarea posttext" value={this.state.value} onChange={this.handleChange} />
+                        </form>
+
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-secondary btn-sm" onClick={this.editSave}>Save</button>
+                        <span>  </span>
+                        <button class="btn btn-outline-secondary btn-sm" onClick={this.editCancel}>Cancel</button>
+                    </div>
+
+                </div>
+            );
+        }
+    }
+
+
+    // Controls the display of an Edit Post component on 'Edit' button click.
+    function editPost(postID) {
+        // Look for the absence of the 'editor' Element ID to confirm that a Post is not already being edited.
+        if (document.getElementById('editor')) {
+             alert('Already editing');
+            return
+        } else {
+            let editPost = '#post-' + postID;
+            let textID = "text-" + postID;
+            let paraID = "para-" + postID
+            let detailValue = document.getElementById(paraID).innerText;
+
+            ReactDOM.render(
+                    <EditForm text={detailValue} post={postID} paraID={paraID}/>,
+                    document.querySelector(editPost)
+            );
+            // Hide the post, whilst the editor is visible
+            document.getElementById(textID).style.display = "none";
+        }
+    }
+
+    function getCookie(name) {
+	    if (!document.cookie) {
+	      return null;
+	    }
+	    const token = document.cookie.split(';')
+	      .map(c => c.trim())
+	      .filter(c => c.startsWith(name + '='));
+
+	    if (token.length === 0) {
+	      return null;
+	    }
+	    return decodeURIComponent(token[0].split('=')[1]);
+    }
+
+    const csrftoken = getCookie('csrftoken')
+
+</script>
 
 {% endblock %}
