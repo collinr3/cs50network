@@ -14,16 +14,21 @@ from .models import User, Post, Follower, Feedback
 
 #@login_required(login_url='/login')
 def index(request):
+    # determine if the user is 'AnonymousUser', or a registered user
+    try:
+        # If a registered user, redirect to the posts view.
+        if User.objects.get(id=request.user.id):
+            return HttpResponseRedirect(reverse("posts"))
+    except User.DoesNotExist:
+        # If the user is not registered, then we will display some intro blurb
+        view_intro = True
+    # Also imit posts for Index page, purely a taster for unregistered users.
     posts = Post.objects.all().order_by('-id')[:3]
+    # Grey the like icons
     opinion = 'U'
     post_list = []
     for post in posts:
         post_list.append((post, opinion))
-    try:
-        if User.objects.get(id=request.user.id):
-            view_intro = False
-    except User.DoesNotExist:
-        view_intro = True
     content = {
         'intro': view_intro,
         'post_list': post_list,
@@ -49,6 +54,7 @@ def login_view(request):
             })
     else:
         return render(request, "network/login.html")
+
 
 @login_required(login_url='/login')
 def logout_view(request):
@@ -85,7 +91,8 @@ def register(request):
 
 @login_required(login_url='/login')
 def get_posts(request):
-    user_id = request.GET.get('uid', '')
+
+    # Or, the user may have posted a new comment
     if request.method == 'POST':
         post = Post(
             author=request.user,
@@ -99,9 +106,11 @@ def get_posts(request):
     person = None
     follow_option = None
 
+    # There may be a userid parameter passed with the GET, so look for it.
+    user_id = request.GET.get('uid', '')
+    # If there is one, then limit the posts to that userid.
     if user_id:
         person = User.objects.get(id=user_id)
-        print(f'User {user_id} person: {person}')
         posts = Post.objects.filter(author=user_id).order_by('-created')
         follower_count = _followers(person)
         following_count = _following(person)
@@ -111,18 +120,14 @@ def get_posts(request):
             follow_option = _get_follow_option(person, request.user)
 
     else:
+        # Otherwise get all posts.
         posts = Post.objects.all().order_by('-created')
 
+    # Now annotate the posts with the like option, based on the user.
     full_post_list = _get_post_list(posts, request.user)
 
-    page = request.GET.get('page', 1)
-    paginator = Paginator(full_post_list, 3)
-    try:
-        post_list = paginator.page(page)
-    except PageNotAnInteger:
-        post_list = paginator.page(1)
-    except EmptyPage:
-        post_list = paginator.page(paginator.num_pages)
+    # Now provide the Django pagination facility to figure out which posts to show.
+    post_list = _paginate(request, full_post_list)
 
     content = {
         'person': person,
@@ -136,23 +141,13 @@ def get_posts(request):
 
 @login_required(login_url='/login')
 def get_following(request):
-    #user_id = request.GET.get('uid', '')
     user_id = request.user.id
-    #(user_id)
     authors = Follower.objects.filter(follower=user_id)
-    #print(f'following {authors}')
     posts = Post.objects.filter(author__in=authors.values_list('following_id', flat=True)).order_by('-created')
-    #print(posts)
     full_post_list = _get_post_list(posts, request.user)
 
-    page = request.GET.get('page', 1)
-    paginator = Paginator(full_post_list, 3)
-    try:
-        post_list = paginator.page(page)
-    except PageNotAnInteger:
-        post_list = paginator.page(1)
-    except EmptyPage:
-        post_list = paginator.page(paginator.num_pages)
+    # Now provide the Django pagination facility to figure out which posts to show.
+    post_list = _paginate(request, full_post_list)
 
     follower_count = _followers(request.user)
     following_count = _following(request.user)
@@ -162,7 +157,6 @@ def get_following(request):
         'followers': follower_count,
         'following': following_count
     }
-    #print(content)
     return render(request, "network/index.html", content)
 
 
@@ -170,12 +164,10 @@ def get_following(request):
 def like(request):
     user = request.user
     post_id = request.GET.get('id', '')
-    #print(type(post_id))
     detail = Post.objects.get(id=post_id)
     if detail.author != user:
         try:
             feedback = Feedback.objects.get(post=detail.id, reader=user)
-            #print(f'Already feedback of this type, so Toggle {like}')
             if feedback.opinion == 'L':
                 feedback.opinion = 'U'
                 detail.like_count = F('like_count') - 1
@@ -194,9 +186,6 @@ def like(request):
     else:
         opinion = 'U'
     detail.refresh_from_db()
-    #print(f'dc {detail.like_count}')
-    posts = [detail]
-    post_list = _get_post_list(posts, user)
 
     follower_count = _followers(detail.author)
     following_count = _following(user)
@@ -208,8 +197,6 @@ def like(request):
         'following': following_count,
         'likes': detail.like_count,
     }
-    #print(content)
-    #return render(request, "network/index.html", content)
     return JsonResponse(content)
 
 @login_required(login_url='/login')
@@ -254,7 +241,6 @@ def update(request):
 
 def _followers(author):
     follower_count = Follower.objects.filter(following=author).count()
-    #print(f'Followers {follower_count}')
     return follower_count
 
 def _following(user):
@@ -267,12 +253,10 @@ def _get_post_list(posts, user):
     for post in posts:
         try:
             like = Feedback.objects.get(post=post.id, reader=user, opinion='L')
-            #print(f'Already feedback of this type')
             opinion = like.opinion
         except Feedback.DoesNotExist:
             opinion = 'U'
         post_list.append((post, opinion))
-    #print(post_list)
     return post_list
 
 
@@ -280,8 +264,21 @@ def _get_follow_option(person, user):
     try:
         Follower.objects.get(following=person, follower=user)
         follow_option = 'Unfollow'
-    except:
+    except Follower.DoesNotExist:
         follow_option = 'Follow'
     return follow_option
+
+
+def _paginate(request, full_post_list):
+    # Django paginate feature
+    page = request.GET.get('page', 1)
+    paginator = Paginator(full_post_list, 3)  # 10 Posts per page
+    try:
+        post_list = paginator.page(page)
+    except PageNotAnInteger:
+        post_list = paginator.page(1)
+    except EmptyPage:
+        post_list = paginator.page(paginator.num_pages)
+    return post_list
 
 
