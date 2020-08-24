@@ -1,0 +1,118 @@
+.body {
+    font-family: "Helvetica Neue";
+    color: #3E3C3C;
+}
+.p {
+    line-height: 0.5;
+}
+.btn {
+    font-size: .8rem;
+    line-height: 1.05rem;
+}
+
+.like-button, .edit-button{
+    border: none;
+    background-color: transparent;
+}
+
+.like-count {
+    margin-right: 5px;
+}
+
+.author {
+    font-size: 0.7rem;
+    line-height: 0.0rem;
+;
+
+}
+
+/* Bootstrap Collapse Tweaks start */
+.posttext {
+  font-size: .8rem;
+  line-height: 1.05rem;
+    border:1px;
+    border-color: #3E3C3C;
+    border-style: solid;
+    border-radius: 5px;
+    padding: 0.5rem
+
+}
+
+
+.posttext p.collapse:not(.show) {
+  display: block;
+  height: 3rem;
+  overflow: hidden;
+}
+
+.posttext p.collapsing {
+  height: 3rem;
+}
+
+.posttext a.collapsed::after {
+  content: '+ Show More';
+}
+
+.posttext a:not(.collapsed)::after {
+  content: '- Show Less';
+}
+/* Bootstrap Collapse Tweaks end */
+
+.comment {
+    font-size: .8rem;
+    line-height: 1.05rem;
+    width: 100%;
+    border:1px;
+    border-color: cornflowerblue;
+    border-style: solid;
+
+}
+
+.editarea{
+    width: 100%;
+    height: 9rem;
+    animation-duration: 0.5s;
+    animation-name: showeditor;
+
+}
+/*
+.container-fluid {
+    border:1px;
+    border-color: cornflowerblue;
+    border-style: solid;
+}
+
+.container {
+    border:1px;
+    border-color: cornflowerblue;
+    border-style: solid;
+}
+*/
+.card-footer {
+    background-color: transparent;
+    height: 1.5rem;
+}
+
+.more {
+    display: none;
+}
+
+#author {
+    border: none;
+}
+
+@keyframes showeditor {
+    0% {
+        height: 6rem;
+    }
+    100% {
+        height: 9rem;
+    }
+
+}
+
+.textarea {
+    width: 80%;
+}
+
+
