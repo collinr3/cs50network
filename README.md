@@ -56,10 +56,10 @@ If you navigate to the URL provided by Django, you should see the Network Home P
 Generally, the user interface is generated from `Django templates`, and styled with `CSS`.
 
 `Javascript` is used to: -
-    * set the `like` icon colour for each post
-    * detect a `like` event so that the status can be updated asynchronously
-    * add a `More` option to posts with large amounts of text. (Note the `text length` is not limited in Network, unlike Twitter).
-    * detect an edit post event and invoke a React editor.
+* set the `like` icon colour for each post
+* detect a `like` event so that the status can be updated asynchronously
+* add a `More` option to posts with large amounts of text. (Note the `text length` is not limited in Network, unlike Twitter).
+* detect an edit post event and invoke a React editor.
     
 `JSX` is used to define the React Editor components and manage the update of a post. 
 
