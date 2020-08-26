@@ -66,6 +66,9 @@ Generally, the user interface is generated from `Django templates`, and styled w
 ### Testing
 
 Currently, there are no test scripts developed for the application.
+The application does include test users `user1` `user2` `user3` and `admin` and also some test posts.
+Note: Passwords are the same as username.
+To start with a clean database, simply delete `db.sqlite3` and re-run migrations `python manage.py migrate`
 
 
 ## Author
